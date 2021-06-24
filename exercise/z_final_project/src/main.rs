@@ -39,23 +39,44 @@ fn main() {
     }
     let subcommand = args.remove(0);
     match subcommand.as_str() {
-        // EXAMPLE FOR CONVERSION OPERATIONS
         "blur" => {
-            if args.len() != 2 {
+            if args.len() != 3 {
                 print_usage_and_exit();
             }
             let infile = args.remove(0);
             let outfile = args.remove(0);
-            // **OPTION**
-            // Improve the blur implementation -- see the blur() function below
-            blur(infile, outfile);
+            let value = args.remove(0);
+            let value:f32 = value.parse().expect("Failed to parse a number");
+            blur(infile, outfile, value);
         },
 
-        // **OPTION**
-        // Brighten -- see the brighten() function below
+        "brighten" => {
+            if args.len() != 3 {
+                print_usage_and_exit();
+            }
+            let infile = args.remove(0);
+            let outfile = args.remove(0);
+            let value = args.remove(0);
+            let value = value.parse().expect("Failed to parse a number");
+            brighten(infile, outfile, value);
+        },
 
-        // **OPTION**
-        // Crop -- see the crop() function below
+        "crop" => {
+            if args.len() != 6 {
+                print_usage_and_exit();
+            }
+            let infile = args.remove(0);
+            let outfile = args.remove(0);
+            let x = args.remove(0);
+            let x: u32 = x.parse().expect("Failed to parse a number");
+            let y = args.remove(0);
+            let y: u32 = y.parse().expect("Failed to parse a number");
+            let width = args.remove(0);
+            let width: u32 = width.parse().expect("Failed to parse a number");
+            let height = args.remove(0);
+            let height: u32 = height.parse().expect("Failed to parse a number");
+            crop(infile, outfile, x, y, width, height);
+        },
 
         // **OPTION**
         // Rotate -- see the rotate() function below
@@ -88,43 +109,31 @@ fn main() {
 fn print_usage_and_exit() {
     println!("USAGE (when in doubt, use a .png extension on your filenames)");
     println!("blur INFILE OUTFILE");
-    // **OPTION**
-    // Print useful information about what subcommands and arguments you can use
-    // println!("...");
+    println!("brighten INFILE OUTFILE VALUE");
+    println!("brighten INFILE OUTFILE X Y WIDTH HEIGHT");
+    println!("fractal OUTFILE");
+
     std::process::exit(-1);
 }
 
-fn blur(infile: String, outfile: String) {
+fn blur(infile: String, outfile: String, value: f32) {
     // Here's how you open an existing image file
     let img = image::open(infile).expect("Failed to open INFILE.");
-    // **OPTION**
-    // Parse the blur amount (an f32) from the command-line and pass it through
-    // to this function, instead of hard-coding it to 2.0.
-    let img2 = img.blur(2.0);
+    let img2 = img.blur(value);
     // Here's how you save an image to a file.
     img2.save(outfile).expect("Failed writing OUTFILE.");
 }
 
-fn brighten(infile: String, outfile: String) {
-    // See blur() for an example of how to open / save an image.
-
-    // .brighten() takes one argument, an i32.  Positive numbers brighten the
-    // image. Negative numbers darken it.  It returns a new image.
-
-    // Challenge: parse the brightness amount from the command-line and pass it
-    // through to this function.
+fn brighten(infile: String, outfile: String, value: i32) {
+    let img = image::open(infile).expect("Failed to open INFILE.");
+    let img2 = img.brighten(value);
+    img2.save(outfile).expect("Failed writing OUTFILE.");
 }
 
-fn crop(infile: String, outfile: String) {
-    // See blur() for an example of how to open an image.
-
-    // .crop() takes four arguments: x: u32, y: u32, width: u32, height: u32
-    // You may hard-code them, if you like.  It returns a new image.
-
-    // Challenge: parse the four values from the command-line and pass them
-    // through to this function.
-
-    // See blur() for an example of how to save the image.
+fn crop(infile: String, outfile: String, x: u32, y: u32, width: u32, height: u32) {
+    let mut img = image::open(infile).expect("Failed to open INFILE.");
+    let img2 = img.crop(x, y, width, height);
+    img2.save(outfile).expect("Failed writing OUTFILE.");
 }
 
 fn rotate(infile: String, outfile: String) {
