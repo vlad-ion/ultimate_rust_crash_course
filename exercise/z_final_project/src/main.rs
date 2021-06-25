@@ -78,14 +78,40 @@ fn main() {
             crop(infile, outfile, x, y, width, height);
         },
 
-        // **OPTION**
-        // Rotate -- see the rotate() function below
+        "rotate" => {
+            if args.len() != 3 {
+                print_usage_and_exit();
+            }
+            let infile = args.remove(0);
+            let outfile = args.remove(0);
+            let value = args.remove(0);
+            let rotvalue = match value.as_str()
+            {
+                "90" => Rotation::R90,
+                "180" => Rotation::R180,
+                "270" => Rotation::R270,
+                _ => { print_usage_and_exit(); panic!("aaaa");}
+            };
+            rotate(infile, outfile, rotvalue);
+        },
 
-        // **OPTION**
-        // Invert -- see the invert() function below
+        "invert" => {
+            if args.len() != 2 {
+                print_usage_and_exit();
+            }
+            let infile = args.remove(0);
+            let outfile = args.remove(0);
+            invert(infile, outfile);
+        },
 
-        // **OPTION**
-        // Grayscale -- see the grayscale() function below
+        "grayscale" => {
+            if args.len() != 2 {
+                print_usage_and_exit();
+            }
+            let infile = args.remove(0);
+            let outfile = args.remove(0);
+            grayscale(infile, outfile);
+        },
 
         // A VERY DIFFERENT EXAMPLE...a really fun one. :-)
         "fractal" => {
@@ -96,8 +122,22 @@ fn main() {
             fractal(outfile);
         }
 
-        // **OPTION**
-        // Generate -- see the generate() function below -- this should be sort of like "fractal()"!
+        "generate" => {
+            if args.len() != 2 {
+                print_usage_and_exit();
+            }
+            let outfile = args.remove(0);
+            let value = args.remove(0);
+            let value : Vec<u8> = value.trim().split(',')
+                .map(|s| s.parse().expect("Failed to parse a number"))
+                .collect();
+            match value.len() == 3
+            {
+                true => generate(outfile, value),
+                false => print_usage_and_exit()
+            }
+            ;
+        }
 
         // For everything else...
         _ => {
@@ -111,7 +151,11 @@ fn print_usage_and_exit() {
     println!("blur INFILE OUTFILE");
     println!("brighten INFILE OUTFILE VALUE");
     println!("brighten INFILE OUTFILE X Y WIDTH HEIGHT");
+    println!("rotate INFILE OUTFILE 90|180|270");
+    println!("invert INFILE OUTFILE");
+    println!("grayscale INFILE OUTFILE");
     println!("fractal OUTFILE");
+    println!("generate OUTFILE R,G,B");
 
     std::process::exit(-1);
 }
@@ -136,52 +180,55 @@ fn crop(infile: String, outfile: String, x: u32, y: u32, width: u32, height: u32
     img2.save(outfile).expect("Failed writing OUTFILE.");
 }
 
-fn rotate(infile: String, outfile: String) {
-    // See blur() for an example of how to open an image.
-
-    // There are 3 rotate functions to choose from (all clockwise):
-    //   .rotate90()
-    //   .rotate180()
-    //   .rotate270()
-    // All three methods return a new image.  Pick one and use it!
-
-    // Challenge: parse the rotation amount from the command-line, pass it
-    // through to this function to select which method to call.
-
-    // See blur() for an example of how to save the image.
+enum Rotation
+{
+    R90,
+    R180,
+    R270,
 }
 
+fn rotate(infile: String, outfile: String, rotation: Rotation) {
+    let img = image::open(infile).expect("Failed to open INFILE.");
+    let img2 = match rotation
+    {
+        Rotation::R90 => img.rotate90(),
+        Rotation::R180 => img.rotate180(),
+        Rotation::R270 => img.rotate270(),
+    };
+    
+    img2.save(outfile).expect("Failed writing OUTFILE.");
+}
 
 fn invert(infile: String, outfile: String) {
-    // See blur() for an example of how to open an image.
-
-    // .invert() takes no arguments and converts the image in-place, so you
-    // will use the same image to save out to a different file.
-
-    // See blur() for an example of how to save the image.
+    let mut img = image::open(infile).expect("Failed to open INFILE.");
+    img.invert();
+    img.save(outfile).expect("Failed writing OUTFILE.");
 }
 
 fn grayscale(infile: String, outfile: String) {
-    // See blur() for an example of how to open an image.
-
-    // .grayscale() takes no arguments. It returns a new image.
-
-    // See blur() for an example of how to save the image.
+    let img = image::open(infile).expect("Failed to open INFILE.");
+    let img2 = img.grayscale();
+    img2.save(outfile).expect("Failed writing OUTFILE.");
 }
 
-fn generate(outfile: String) {
-    // Create an ImageBuffer -- see fractal() for an example
+fn generate(outfile: String, color: Vec<u8>) {
+    let width = 800;
+    let height = 800;
 
-    // Iterate over the coordinates and pixels of the image -- see fractal() for an example
+    let mut imgbuf = image::ImageBuffer::new(width, height);
 
-    // Set the image to some solid color. -- see fractal() for an example
+    // Iterate over the coordinates and pixels of the image
+    for (x, y, pixel) in imgbuf.enumerate_pixels_mut() {
+        // Use red and blue to be a pretty gradient background
+        let red = ((color[0] as u32 * x) % 256) as u8;
+        let green = ((color[1] as u32 * y) % 256) as u8;
+        let blue = ((color[2] as u32 * (x+y)) % 256) as u8;
 
-    // Challenge: parse some color data from the command-line, pass it through
-    // to this function to use for the solid color.
+        // Actually set the pixel. red, green, and blue are u8 values!
+        *pixel = image::Rgb([red, green, blue]);
+    }
 
-    // Challenge 2: Generate something more interesting!
-
-    // See blur() for an example of how to save the image
+    imgbuf.save(outfile).unwrap();
 }
 
 // This code was adapted from https://github.com/PistonDevelopers/image
